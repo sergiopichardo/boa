@@ -65,7 +65,6 @@ where
         let mut elements = Vec::new();
 
         loop {
-            cursor.skip_line_terminators()?;
             // TODO: Support all features.
             while cursor.next_if(Punctuator::Comma)?.is_some() {
                 elements.push(Node::Const(Const::Undefined));
@@ -87,7 +86,6 @@ where
                         .parse(cursor)?,
                 );
             }
-            cursor.skip_line_terminators()?;
             cursor.next_if(Punctuator::Comma)?;
         }
 

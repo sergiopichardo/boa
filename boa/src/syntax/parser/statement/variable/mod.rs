@@ -115,6 +115,7 @@ where
                     .parse(cursor)?,
             );
 
+            println!("About to peek semicolon");
             match cursor.peek_semicolon()? {
                 (true, _) => break,
                 (false, Some(tk)) if tk.kind == TokenKind::Punctuator(Punctuator::Comma) => {
@@ -127,7 +128,7 @@ where
                             TokenKind::LineTerminator,
                         ],
                         cursor.next()?.ok_or(ParseError::AbruptEnd)?,
-                        "lexical declaration",
+                        "variable declaration list",
                     ))
                 }
             }

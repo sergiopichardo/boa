@@ -377,8 +377,6 @@ fn num_to_string_exponential() {
 fn value_of() {
     let realm = Realm::create();
     let mut engine = Interpreter::new(realm);
-    // TODO: In addition to parsing numbers from strings, parse them bare As of October 2019
-    // the parser does not understand scientific e.g., Xe+Y or -Xe-Y notation.
     let init = r#"
         var default_val = Number().valueOf();
         var int_val = Number("123").valueOf();
@@ -387,7 +385,7 @@ fn value_of() {
         var neg_val = Number("-1.2e+4").valueOf()
         "#;
 
-    eprintln!("{}", forward(&mut engine, init));
+    forward_val(&mut engine, init).unwrap();
     let default_val = forward_val(&mut engine, "default_val").unwrap();
     let int_val = forward_val(&mut engine, "int_val").unwrap();
     let float_val = forward_val(&mut engine, "float_val").unwrap();
