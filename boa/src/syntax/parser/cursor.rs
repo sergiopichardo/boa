@@ -64,17 +64,19 @@ where
             Ok(self.lexer.next()?)
         } else {
             let val = self.peeked[self.back_index].take();
-            // let val = self.peeked[self.back_index];
             self.back_index = (self.back_index + 1) % PEEK_BUF_SIZE;
             Ok(val)
         }
     }
 
     /// Peeks the next token without moving the cursor.
-
     pub(super) fn peek(&mut self) -> Result<Option<Token>, ParseError> {
-        let _timer = BoaProfiler::global().start_event("cursor::peek()", "Parsing");
-
+        self.skip_line_terminators()?;
+        self.peek_explicit()
+    }
+    
+    /// Acts the same as peek() but explicitly does not ignore line terminators.
+    pub(super) fn peek_explicit(&mut self) -> Result<Option<Token>, ParseError> {
         if self.front_index == self.back_index {
             // No value has been peeked ahead already so need to go get the next value.
 
@@ -89,7 +91,12 @@ where
     /// Peeks the token after the next token.
     /// i.e. if there are tokens A, B, C and peek() returns A then peek_skip() will return B.
     pub(super) fn peek_skip(&mut self) -> Result<Option<Token>, ParseError> {
-        let _timer = BoaProfiler::global().start_event("cursor::peek_skip()", "Parsing");
+        self.skip_line_terminators()?;
+        self.peek_skip_explicit()
+    }
+
+    /// Acts the same as peek_skip but explicitly does not ignore/skip line terminators.
+    pub(super) fn peek_skip_explicit(&mut self) -> Result<Option<Token>, ParseError> {
         if self.front_index == self.back_index {
             // No value has been peeked ahead already so need to go get the next value.
 
@@ -114,6 +121,7 @@ where
             Ok(self.peeked[(self.back_index + 1) % PEEK_BUF_SIZE].clone())
         }
     }
+    
 
     /// Takes the given token and pushes it back onto the parser token queue.
     ///
@@ -236,7 +244,7 @@ where
     where
         K: Into<TokenKind>,
     {
-        Ok(if let Some(token) = self.peek()? {
+        Ok(if let Some(token) = self.peek_explicit()? {
             if token.kind() == &kind.into() {
                 self.next()?
             } else {
@@ -252,5 +260,225 @@ where
     pub(super) fn skip_line_terminators(&mut self) -> Result<(), ParseError> {
         while self.next_if(TokenKind::LineTerminator)?.is_some() {}
         Ok(())
+    }
+}
+
+#[test]
+fn lots_of_peeks() {
+    let s = r#"let x = 10"#;
+
+    let mut cursor = Cursor::new(s.as_bytes());
+
+    let val = cursor.peek().unwrap();
+
+    let mut i: usize = 0;
+
+    while i < 10000000 {
+        assert_eq!(val, cursor.peek().unwrap());
+        i += 1;
+    }
+}
+
+#[test]
+fn lots_of_nexts() {
+    let s = r#"
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;let x = 10;
+    "#;
+
+    let mut cursor = Cursor::new(s.as_bytes());
+
+    let mut i: usize = 0;
+
+    while i < 10000 {
+        cursor.next().unwrap();
+        i += 1;
     }
 }
