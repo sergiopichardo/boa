@@ -11,10 +11,8 @@
       "windows": {
         "program": "${workspaceFolder}/target/debug/boa.exe"
       },
-      "program": "${workspaceFolder}/target/debug/boa",
-      "args": [
-        "${workspaceFolder}/tests/js/test.js"
-      ],
+      "program": "target/debug/deps/boa-0e316821f44800c8",
+      "args": [],
       "sourceLanguages": [
         "rust"
       ]
