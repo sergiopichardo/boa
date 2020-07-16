@@ -66,7 +66,7 @@ where
 
         loop {
             // TODO: Support all features.
-            while cursor.next_if(Punctuator::Comma)?.is_some() {
+            while cursor.next_if_implicit(Punctuator::Comma)?.is_some() {
                 elements.push(Node::Const(Const::Undefined));
             }
 
@@ -74,7 +74,7 @@ where
                 break;
             }
 
-            let _ = cursor.peek()?.ok_or(ParseError::AbruptEnd); // Check that there are more tokens to read.
+            let _ = cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd); // Check that there are more tokens to read.
 
             if cursor.next_if(Punctuator::Spread)?.is_some() {
                 let node = AssignmentExpression::new(true, self.allow_yield, self.allow_await)

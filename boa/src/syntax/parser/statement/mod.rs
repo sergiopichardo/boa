@@ -103,7 +103,7 @@ where
     fn parse(self, cursor: &mut Cursor<R>) -> Result<Self::Output, ParseError> {
         let _timer = BoaProfiler::global().start_event("Statement", "Parsing");
         // TODO: add BreakableStatement and divide Whiles, fors and so on to another place.
-        let tok = cursor.peek()?.ok_or(ParseError::AbruptEnd)?;
+        let tok = cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd)?;
 
         match tok.kind() {
             TokenKind::Keyword(Keyword::If) => {
@@ -238,7 +238,7 @@ impl StatementList {
         let mut items = Vec::new();
 
         loop {
-            if let Some(token) = cursor.peek()? {
+            if let Some(token) = cursor.peek_explicit()? {
                 if break_nodes.contains(token.kind()) {
                     break;
                 }
@@ -273,7 +273,7 @@ where
         let mut items = Vec::new();
 
         loop {
-            match cursor.peek()? {
+            match cursor.peek_explicit()? {
                 Some(token) if token.kind() == &TokenKind::Punctuator(Punctuator::CloseBlock) => {
                     if self.break_when_closingbraces {
                         break;
@@ -347,7 +347,7 @@ where
 
     fn parse(self, cursor: &mut Cursor<R>) -> Result<Self::Output, ParseError> {
         let _timer = BoaProfiler::global().start_event("StatementListItem", "Parsing");
-        let tok = cursor.peek()?.ok_or(ParseError::AbruptEnd)?;
+        let tok = cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd)?;
 
         match tok.kind {
             TokenKind::Keyword(Keyword::Function)
@@ -396,6 +396,29 @@ impl BindingIdentifier {
             allow_await: allow_await.into(),
         }
     }
+
+    pub(crate) fn try_parse<R>(self, cursor: &mut Cursor<R>) -> Result<Option<Box<str>>, ParseError>
+    where 
+        R: Read
+    {
+        let next_token = cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd)?;
+
+        match next_token.kind() {
+            TokenKind::Identifier(ref s) => {
+                cursor.next()?.expect("Identifier token vanished"); // Consume the token.
+                Ok(Some(s.clone()))
+            }
+            TokenKind::Keyword(k @ Keyword::Yield) if !self.allow_yield.0 => {
+                cursor.next()?.expect("Yield keyword vanished");
+                Ok(Some(k.as_str().into()))
+            }
+            TokenKind::Keyword(k @ Keyword::Await) if !self.allow_await.0 => {
+                cursor.next()?.expect("Await keyword vanished");
+                Ok(Some(k.as_str().into()))
+            }
+            _ => Ok(None)
+        }
+    }
 }
 
 impl<R> TokenParser<R> for BindingIdentifier
@@ -408,7 +431,7 @@ where
         let _timer = BoaProfiler::global().start_event("BindingIdentifier", "Parsing");
         // TODO: strict mode.
 
-        let next_token = cursor.peek()?.ok_or(ParseError::AbruptEnd)?;
+        let next_token = cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd)?;
 
         match next_token.kind() {
             TokenKind::Identifier(ref s) => {

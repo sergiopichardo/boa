@@ -83,7 +83,7 @@ where
         cursor.set_goal(InputElement::Div);
 
         // Arrow function
-        match cursor.peek()?.ok_or(ParseError::AbruptEnd)?.kind() {
+        match cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd)?.kind() {
             // a=>{}
             TokenKind::Identifier(_)
             | TokenKind::Keyword(Keyword::Yield)
@@ -105,13 +105,14 @@ where
 
             // (a,b)=>{}
             TokenKind::Punctuator(Punctuator::OpenParen) => {
-                if let Some(node) =
-                    ArrowFunction::new(self.allow_in, self.allow_yield, self.allow_await)
-                        .try_parse(cursor)
-                        .map(Node::ArrowFunctionDecl)
-                {
-                    return Ok(node);
-                }
+                let node = ArrowFunction::new(self.allow_in, self.allow_yield, self.allow_await)
+                        .parse(cursor)?;
+                return Ok(node.into());
+                // if let Some(node) =
+                    
+                // {
+                    
+                // }
             }
 
             _ => {}
@@ -122,7 +123,7 @@ where
         let mut lhs = ConditionalExpression::new(self.allow_in, self.allow_yield, self.allow_await)
             .parse(cursor)?;
 
-        if let Some(tok) = cursor.peek()? {
+        if let Some(tok) = cursor.peek_explicit()? {
             match tok.kind() {
                 TokenKind::Punctuator(Punctuator::Assign) => {
                     cursor.next()?.expect("= token vanished"); // Consume the token.

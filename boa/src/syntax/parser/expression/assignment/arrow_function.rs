@@ -60,6 +60,29 @@ impl ArrowFunction {
             allow_await: allow_await.into(),
         }
     }
+
+    // pub(crate) fn try_parse<R>(self, cursor: &mut Cursor<R>) -> Result<Option<ArrowFunctionDecl>, ParseError>
+    // where 
+    //     R: Read
+    // {
+    //     unimplemented!();
+    //     // Ok (
+    //     //     if let Some(t) = cursor.peek_explicit()? {
+    //     //         Some(self.parse(cursor)?)
+
+    //     //         // if *t.kind() == TokenKind::Punctuator(Punctuator::OpenParen) {
+    //     //         //     // if let Some(nt) = cursor.peek_skip()? {
+    //     //         //     //     if *nt.kind() == TokenKind::Punctuator()
+    //     //         //     // }
+                    
+    //     //         // } else {
+
+    //     //         // }
+    //     //     } else {
+    //     //         None
+    //     //     }
+    //     // )
+    // }
 }
 
 impl<R> TokenParser<R> for ArrowFunction
@@ -71,7 +94,7 @@ where
     fn parse(self, cursor: &mut Cursor<R>) -> Result<Self::Output, ParseError> {
         let _timer = BoaProfiler::global().start_event("ArrowFunction", "Parsing");
 
-        let next_token = cursor.peek()?.ok_or(ParseError::AbruptEnd)?;
+        let next_token = cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd)?;
         let params = if let TokenKind::Punctuator(Punctuator::OpenParen) = &next_token.kind() {
             // CoverParenthesizedExpressionAndArrowParameterList
 
@@ -132,7 +155,7 @@ where
     type Output = StatementList;
 
     fn parse(self, cursor: &mut Cursor<R>) -> Result<Self::Output, ParseError> {
-        match cursor.peek()?.ok_or(ParseError::AbruptEnd)?.kind() {
+        match cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd)?.kind() {
             TokenKind::Punctuator(Punctuator::OpenBlock) => {
                 let _ = cursor.next();
                 let body = FunctionBody::new(false, false).parse(cursor)?;

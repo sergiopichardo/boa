@@ -59,10 +59,13 @@ fn parser_expr(src: &str) -> Result<StatementList, String> {
 /// The str is consumed and the state of the Interpreter is changed
 pub fn forward(engine: &mut Interpreter, src: &str) -> String {
     // Setup executor
-    let expr = match parser_expr(src) {
-        Ok(res) => res,
-        Err(e) => return e,
-    };
+    // let expr = match parser_expr(src) {
+    //     Ok(res) => res,
+    //     Err(e) => return e,
+    // };
+
+    // REMOVE ME, intentional panic on error makes debugging easier and stops some stack overflows.
+    let expr = parser_expr(src).unwrap();
     expr.run(engine)
         .map_or_else(|e| format!("Error: {}", e), |v| v.to_string())
 }

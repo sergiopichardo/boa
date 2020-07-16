@@ -307,6 +307,28 @@ where
         })
     }
 
+    /// Advance the cursor to the next token and retrieve it, only if it's of `kind` type.
+    ///
+    /// When the next token is a `kind` token, get the token, otherwise return `None`.
+    ///
+    /// No next token also returns None.
+    ///
+    /// This implicitly skips line terminators.
+    pub(super) fn next_if_implicit<K>(&mut self, kind: K) -> Result<Option<Token>, ParseError>
+    where
+        K: Into<TokenKind>,
+    {
+        Ok(if let Some(token) = self.peek()? {
+            if token.kind() == &kind.into() {
+                self.next()?
+            } else {
+                None
+            }
+        } else {
+            None
+        })
+    }
+
     /// Advance the cursor to skip 0, 1 or more line terminators.
     #[inline]
     fn skip_line_terminators(&mut self) -> Result<(), ParseError> {
@@ -321,12 +343,12 @@ fn lots_of_peeks() {
 
     let mut cursor = Cursor::new(s.as_bytes());
 
-    let val = cursor.peek().unwrap();
+    let val = cursor.peek_explicit().unwrap();
 
     let mut i: usize = 0;
 
     while i < 10000000 {
-        assert_eq!(val, cursor.peek().unwrap());
+        assert_eq!(val, cursor.peek_explicit().unwrap());
         i += 1;
     }
 }

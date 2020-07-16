@@ -64,7 +64,7 @@ where
 
         let mut params = Vec::new();
 
-        if cursor.peek()?.ok_or(ParseError::AbruptEnd)?.kind()
+        if cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd)?.kind()
             == &TokenKind::Punctuator(Punctuator::CloseParen)
         {
             return Ok(params.into_boxed_slice());
@@ -80,7 +80,7 @@ where
                 FormalParameter::new(self.allow_yield, self.allow_await).parse(cursor)?
             });
 
-            if cursor.peek()?.ok_or(ParseError::AbruptEnd)?.kind()
+            if cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd)?.kind()
                 == &TokenKind::Punctuator(Punctuator::CloseParen)
             {
                 break;
@@ -88,7 +88,7 @@ where
 
             if rest_param {
                 return Err(ParseError::unexpected(
-                    cursor.peek()?.expect("Peek token disappeared"),
+                    cursor.peek_explicit()?.expect("Peek token disappeared"),
                     "rest parameter must be the last formal parameter",
                 ));
             }
@@ -194,7 +194,15 @@ where
 
         let param = BindingIdentifier::new(self.allow_yield, self.allow_await).parse(cursor)?;
 
-        let init = Initializer::new(true, self.allow_yield, self.allow_await).try_parse(cursor);
+        let init = if let Some(t) = cursor.peek_explicit()? {
+            if *t.kind() == TokenKind::Punctuator(Punctuator::Assign) {
+                Some(Initializer::new(true, self.allow_yield, self.allow_await).parse(cursor)?)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
         Ok(Self::Output::new(param, init, false))
     }
@@ -241,7 +249,7 @@ where
     type Output = node::StatementList;
 
     fn parse(self, cursor: &mut Cursor<R>) -> Result<Self::Output, ParseError> {
-        if let Some(tk) = cursor.peek()? {
+        if let Some(tk) = cursor.peek_explicit()? {
             if tk.kind() == &Punctuator::CloseBlock.into() {
                 return Ok(Vec::new().into());
             }

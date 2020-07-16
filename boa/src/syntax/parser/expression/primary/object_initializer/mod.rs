@@ -160,7 +160,7 @@ where
                 .parse(cursor);
         }
 
-        let pos = cursor.peek()?.ok_or(ParseError::AbruptEnd)?.span().start();
+        let pos = cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd)?.span().start();
         Err(ParseError::general("expected property definition", pos))
     }
 }
@@ -210,7 +210,7 @@ where
                     TokenKind::Punctuator(Punctuator::OpenParen),
                     "property method definition",
                 )?;
-                let first_param = cursor.peek()?.expect("current token disappeared");
+                let first_param = cursor.peek_explicit()?.expect("current token disappeared");
                 let params = FormalParameters::new(false, false).parse(cursor)?;
                 cursor.expect(Punctuator::CloseParen, "method definition")?;
                 if idn == "get" {

@@ -61,7 +61,7 @@ where
     fn parse(self, cursor: &mut Cursor<R>) -> ParseResult {
         let _timer = BoaProfiler::global().start_event("UnaryExpression", "Parsing");
 
-        let tok = cursor.peek()?.ok_or(ParseError::AbruptEnd)?;
+        let tok = cursor.peek_explicit()?.ok_or(ParseError::AbruptEnd)?;
         match tok.kind() {
             TokenKind::Keyword(Keyword::Delete) => {
                 cursor.next()?.expect("Delete keyword vanished"); // Consume the token.

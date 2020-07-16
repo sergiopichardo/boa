@@ -31,13 +31,8 @@ where
     fn parse(self, cursor: &mut Cursor<R>) -> Result<Self::Output, ParseError>;
 
     /// Tries to parse the following tokens with this parser.
-    fn try_parse(self, cursor: &mut Cursor<R>) -> Option<Self::Output> {
+    fn try_parse_(self, cursor: &mut Cursor<R>) -> Option<Self::Output> {
         unimplemented!();
-        // if let Ok(node) = self.parse(cursor) {
-        //     Some(node)
-        // } else {
-        //     None
-        // }
     }
 }
 
@@ -131,7 +126,7 @@ where
     type Output = StatementList;
 
     fn parse(self, cursor: &mut Cursor<R>) -> Result<Self::Output, ParseError> {
-        if cursor.peek()?.is_some() {
+        if cursor.peek_explicit()?.is_some() {
             ScriptBody.parse(cursor)
         } else {
             Ok(StatementList::from(Vec::new()))
