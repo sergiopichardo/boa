@@ -517,6 +517,16 @@
 <span id="517">517</span>
 <span id="518">518</span>
 <span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! This module implements the global `console` object.</span>
 <span class="doccomment">//!</span>
@@ -537,12 +547,9 @@
 <span class="kw">mod</span> <span class="ident">tests</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">builtins</span>::{
-        <span class="ident">function</span>::<span class="ident">make_builtin_fn</span>,
-        <span class="ident">value</span>::{<span class="ident">display_obj</span>, <span class="ident">RcString</span>, <span class="ident">ResultValue</span>, <span class="ident">Value</span>},
-    },
-    <span class="ident">exec</span>::<span class="ident">Interpreter</span>,
-    <span class="ident">BoaProfiler</span>,
+    <span class="ident">builtins</span>::<span class="ident">function</span>::<span class="ident">make_builtin_fn</span>,
+    <span class="ident">value</span>::{<span class="ident">display_obj</span>, <span class="ident">RcString</span>, <span class="ident">Value</span>},
+    <span class="ident">BoaProfiler</span>, <span class="ident">Context</span>, <span class="prelude-ty">Result</span>,
 };
 <span class="kw">use</span> <span class="ident">rustc_hash</span>::<span class="ident">FxHashMap</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">time</span>::<span class="ident">SystemTime</span>;
@@ -579,8 +586,9 @@
 }
 
 <span class="doccomment">/// This represents the `console` formatter.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">formatter</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">Value</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">ctx</span>.<span class="ident">to_string</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>.<span class="ident">get</span>(<span class="number">0</span>).<span class="ident">cloned</span>().<span class="ident">unwrap_or_default</span>())<span class="question-mark">?</span>;
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">formatter</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">get</span>(<span class="number">0</span>).<span class="ident">cloned</span>().<span class="ident">unwrap_or_default</span>().<span class="ident">to_string</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>;
+
     <span class="kw">match</span> <span class="ident">data</span>.<span class="ident">len</span>() {
         <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">String</span>::<span class="ident">new</span>()),
         <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">target</span>.<span class="ident">to_string</span>()),
@@ -594,26 +602,37 @@
                     <span class="kw">match</span> <span class="ident">fmt</span> {
                         <span class="comment">/* integer */</span>
                         <span class="string">&#39;d&#39;</span> <span class="op">|</span> <span class="string">&#39;i&#39;</span> <span class="op">=</span><span class="op">&gt;</span> {
-                            <span class="kw">let</span> <span class="ident">arg</span> <span class="op">=</span> <span class="ident">get_arg_at_index</span>::<span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>(<span class="ident">data</span>, <span class="ident">arg_index</span>).<span class="ident">unwrap_or_default</span>();
+                            <span class="kw">let</span> <span class="ident">arg</span> <span class="op">=</span> <span class="ident">data</span>
+                                .<span class="ident">get</span>(<span class="ident">arg_index</span>)
+                                .<span class="ident">cloned</span>()
+                                .<span class="ident">unwrap_or_default</span>()
+                                .<span class="ident">to_integer</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>;
                             <span class="ident">formatted</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">arg</span>));
                             <span class="ident">arg_index</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
                         }
                         <span class="comment">/* float */</span>
                         <span class="string">&#39;f&#39;</span> <span class="op">=</span><span class="op">&gt;</span> {
-                            <span class="kw">let</span> <span class="ident">arg</span> <span class="op">=</span> <span class="ident">get_arg_at_index</span>::<span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>(<span class="ident">data</span>, <span class="ident">arg_index</span>).<span class="ident">unwrap_or_default</span>();
+                            <span class="kw">let</span> <span class="ident">arg</span> <span class="op">=</span> <span class="ident">data</span>
+                                .<span class="ident">get</span>(<span class="ident">arg_index</span>)
+                                .<span class="ident">cloned</span>()
+                                .<span class="ident">unwrap_or_default</span>()
+                                .<span class="ident">to_number</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>;
                             <span class="ident">formatted</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{number:.prec$}&quot;</span>, <span class="ident">number</span> <span class="op">=</span> <span class="ident">arg</span>, <span class="ident">prec</span> <span class="op">=</span> <span class="number">6</span>));
                             <span class="ident">arg_index</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>
                         }
                         <span class="comment">/* object, FIXME: how to render this properly? */</span>
                         <span class="string">&#39;o&#39;</span> <span class="op">|</span> <span class="string">&#39;O&#39;</span> <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="kw">let</span> <span class="ident">arg</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">get</span>(<span class="ident">arg_index</span>).<span class="ident">cloned</span>().<span class="ident">unwrap_or_default</span>();
-                            <span class="ident">formatted</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">arg</span>));
+                            <span class="ident">formatted</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">arg</span>.<span class="ident">display</span>()));
                             <span class="ident">arg_index</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>
                         }
                         <span class="comment">/* string */</span>
                         <span class="string">&#39;s&#39;</span> <span class="op">=</span><span class="op">&gt;</span> {
-                            <span class="kw">let</span> <span class="ident">arg</span> <span class="op">=</span>
-                                <span class="ident">ctx</span>.<span class="ident">to_string</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>.<span class="ident">get</span>(<span class="ident">arg_index</span>).<span class="ident">cloned</span>().<span class="ident">unwrap_or_default</span>())<span class="question-mark">?</span>;
+                            <span class="kw">let</span> <span class="ident">arg</span> <span class="op">=</span> <span class="ident">data</span>
+                                .<span class="ident">get</span>(<span class="ident">arg_index</span>)
+                                .<span class="ident">cloned</span>()
+                                .<span class="ident">unwrap_or_default</span>()
+                                .<span class="ident">to_string</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>;
                             <span class="ident">formatted</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="ident">arg</span>);
                             <span class="ident">arg_index</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>
                         }
@@ -631,7 +650,7 @@
 
             <span class="comment">/* unformatted data */</span>
             <span class="kw">for</span> <span class="ident">rest</span> <span class="kw">in</span> <span class="ident">data</span>.<span class="ident">iter</span>().<span class="ident">skip</span>(<span class="ident">arg_index</span>) {
-                <span class="ident">formatted</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot; {}&quot;</span>, <span class="ident">rest</span>))
+                <span class="ident">formatted</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot; {}&quot;</span>, <span class="ident">rest</span>.<span class="ident">to_string</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>))
             }
 
             <span class="prelude-val">Ok</span>(<span class="ident">formatted</span>)
@@ -662,7 +681,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#assert</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/assert</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">assert</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">assert</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">assertion</span> <span class="op">=</span> <span class="ident">get_arg_at_index</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(<span class="ident">args</span>, <span class="number">0</span>).<span class="ident">unwrap_or_default</span>();
 
         <span class="kw">if</span> <span class="op">!</span><span class="ident">assertion</span> {
@@ -673,7 +692,7 @@
             } <span class="kw">else</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">args</span>[<span class="number">0</span>].<span class="ident">is_string</span>() {
                 <span class="ident">args</span>.<span class="ident">insert</span>(<span class="number">0</span>, <span class="ident">Value</span>::<span class="ident">from</span>(<span class="ident">message</span>));
             } <span class="kw">else</span> {
-                <span class="kw">let</span> <span class="ident">concat</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}: {}&quot;</span>, <span class="ident">message</span>, <span class="ident">args</span>[<span class="number">0</span>]);
+                <span class="kw">let</span> <span class="ident">concat</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}: {}&quot;</span>, <span class="ident">message</span>, <span class="ident">args</span>[<span class="number">0</span>].<span class="ident">display</span>());
                 <span class="ident">args</span>[<span class="number">0</span>] <span class="op">=</span> <span class="ident">Value</span>::<span class="ident">from</span>(<span class="ident">concat</span>);
             }
 
@@ -693,7 +712,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#clear</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/clear</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">clear</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">clear</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="ident">ctx</span>.<span class="ident">console_mut</span>().<span class="ident">groups</span>.<span class="ident">clear</span>();
         <span class="prelude-val">Ok</span>(<span class="ident">Value</span>::<span class="ident">undefined</span>())
     }
@@ -708,7 +727,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#debug</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/debug</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">debug</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">debug</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="ident">logger</span>(<span class="ident">LogMessage</span>::<span class="ident">Log</span>(<span class="ident">formatter</span>(<span class="ident">args</span>, <span class="ident">ctx</span>)<span class="question-mark">?</span>), <span class="ident">ctx</span>.<span class="ident">console</span>());
         <span class="prelude-val">Ok</span>(<span class="ident">Value</span>::<span class="ident">undefined</span>())
     }
@@ -723,7 +742,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#error</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/error</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">error</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">error</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="ident">logger</span>(<span class="ident">LogMessage</span>::<span class="ident">Error</span>(<span class="ident">formatter</span>(<span class="ident">args</span>, <span class="ident">ctx</span>)<span class="question-mark">?</span>), <span class="ident">ctx</span>.<span class="ident">console</span>());
         <span class="prelude-val">Ok</span>(<span class="ident">Value</span>::<span class="ident">undefined</span>())
     }
@@ -738,7 +757,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#info</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/info</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">info</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">info</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="ident">logger</span>(<span class="ident">LogMessage</span>::<span class="ident">Info</span>(<span class="ident">formatter</span>(<span class="ident">args</span>, <span class="ident">ctx</span>)<span class="question-mark">?</span>), <span class="ident">ctx</span>.<span class="ident">console</span>());
         <span class="prelude-val">Ok</span>(<span class="ident">Value</span>::<span class="ident">undefined</span>())
     }
@@ -753,7 +772,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#log</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/log</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">log</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="ident">logger</span>(<span class="ident">LogMessage</span>::<span class="ident">Log</span>(<span class="ident">formatter</span>(<span class="ident">args</span>, <span class="ident">ctx</span>)<span class="question-mark">?</span>), <span class="ident">ctx</span>.<span class="ident">console</span>());
         <span class="prelude-val">Ok</span>(<span class="ident">Value</span>::<span class="ident">undefined</span>())
     }
@@ -768,7 +787,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#trace</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/trace</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">trace</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">trace</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">args</span>.<span class="ident">is_empty</span>() {
             <span class="ident">logger</span>(<span class="ident">LogMessage</span>::<span class="ident">Log</span>(<span class="ident">formatter</span>(<span class="ident">args</span>, <span class="ident">ctx</span>)<span class="question-mark">?</span>), <span class="ident">ctx</span>.<span class="ident">console</span>());
 
@@ -792,7 +811,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#warn</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/warn</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">warn</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">warn</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="ident">logger</span>(<span class="ident">LogMessage</span>::<span class="ident">Warn</span>(<span class="ident">formatter</span>(<span class="ident">args</span>, <span class="ident">ctx</span>)<span class="question-mark">?</span>), <span class="ident">ctx</span>.<span class="ident">console</span>());
         <span class="prelude-val">Ok</span>(<span class="ident">Value</span>::<span class="ident">undefined</span>())
     }
@@ -807,9 +826,9 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#count</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/count</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">count</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">count</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">label</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">args</span>.<span class="ident">get</span>(<span class="number">0</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ctx</span>.<span class="ident">to_string</span>(<span class="ident">value</span>)<span class="question-mark">?</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">value</span>.<span class="ident">to_string</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>,
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;default&quot;</span>.<span class="ident">into</span>(),
         };
 
@@ -831,9 +850,9 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#countreset</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/countReset</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">count_reset</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">count_reset</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">label</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">args</span>.<span class="ident">get</span>(<span class="number">0</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ctx</span>.<span class="ident">to_string</span>(<span class="ident">value</span>)<span class="question-mark">?</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">value</span>.<span class="ident">to_string</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>,
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;default&quot;</span>.<span class="ident">into</span>(),
         };
 
@@ -865,9 +884,9 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#time</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/time</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">time</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">time</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">label</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">args</span>.<span class="ident">get</span>(<span class="number">0</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ctx</span>.<span class="ident">to_string</span>(<span class="ident">value</span>)<span class="question-mark">?</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">value</span>.<span class="ident">to_string</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>,
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;default&quot;</span>.<span class="ident">into</span>(),
         };
 
@@ -894,9 +913,9 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#timelog</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/timeLog</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">time_log</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">time_log</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">label</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">args</span>.<span class="ident">get</span>(<span class="number">0</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ctx</span>.<span class="ident">to_string</span>(<span class="ident">value</span>)<span class="question-mark">?</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">value</span>.<span class="ident">to_string</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>,
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;default&quot;</span>.<span class="ident">into</span>(),
         };
 
@@ -904,7 +923,7 @@
             <span class="kw">let</span> <span class="ident">time</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">system_time_in_ms</span>();
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">concat</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}: {} ms&quot;</span>, <span class="ident">label</span>, <span class="ident">time</span> <span class="op">-</span> <span class="ident">t</span>);
             <span class="kw">for</span> <span class="ident">msg</span> <span class="kw">in</span> <span class="ident">args</span>.<span class="ident">iter</span>().<span class="ident">skip</span>(<span class="number">1</span>) {
-                <span class="ident">concat</span> <span class="op">=</span> <span class="ident">concat</span> <span class="op">+</span> <span class="string">&quot; &quot;</span> <span class="op">+</span> <span class="kw-2">&amp;</span><span class="ident">msg</span>.<span class="ident">to_string</span>();
+                <span class="ident">concat</span> <span class="op">=</span> <span class="ident">concat</span> <span class="op">+</span> <span class="string">&quot; &quot;</span> <span class="op">+</span> <span class="kw-2">&amp;</span><span class="ident">msg</span>.<span class="ident">display</span>().<span class="ident">to_string</span>();
             }
             <span class="ident">logger</span>(<span class="ident">LogMessage</span>::<span class="ident">Log</span>(<span class="ident">concat</span>), <span class="ident">ctx</span>.<span class="ident">console</span>());
         } <span class="kw">else</span> {
@@ -927,9 +946,9 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#timeend</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/timeEnd</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">time_end</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">time_end</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">label</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">args</span>.<span class="ident">get</span>(<span class="number">0</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ctx</span>.<span class="ident">to_string</span>(<span class="ident">value</span>)<span class="question-mark">?</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">value</span>.<span class="ident">to_string</span>(<span class="ident">ctx</span>)<span class="question-mark">?</span>,
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;default&quot;</span>.<span class="ident">into</span>(),
         };
 
@@ -959,7 +978,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#group</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/group</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">group</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">group</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">group_label</span> <span class="op">=</span> <span class="ident">formatter</span>(<span class="ident">args</span>, <span class="ident">ctx</span>)<span class="question-mark">?</span>;
 
         <span class="ident">logger</span>(
@@ -981,7 +1000,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#groupend</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/groupEnd</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">group_end</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">group_end</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="kw">_</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="ident">ctx</span>.<span class="ident">console_mut</span>().<span class="ident">groups</span>.<span class="ident">pop</span>();
 
         <span class="prelude-val">Ok</span>(<span class="ident">Value</span>::<span class="ident">undefined</span>())
@@ -997,7 +1016,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// [spec]: https://console.spec.whatwg.org/#dir</span>
     <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/API/console/dir</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">dir</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Interpreter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ResultValue</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">dir</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Value</span>], <span class="ident">ctx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">undefined</span> <span class="op">=</span> <span class="ident">Value</span>::<span class="ident">undefined</span>();
         <span class="ident">logger</span>(
             <span class="ident">LogMessage</span>::<span class="ident">Info</span>(<span class="ident">display_obj</span>(<span class="ident">args</span>.<span class="ident">get</span>(<span class="number">0</span>).<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">undefined</span>), <span class="bool-val">true</span>)),
@@ -1009,30 +1028,31 @@
 
     <span class="doccomment">/// Initialise the `console` object on the global object.</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">init</span>(<span class="ident">global</span>: <span class="kw-2">&amp;</span><span class="ident">Value</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Value</span>) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">init</span>(<span class="ident">interpreter</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>, <span class="ident">Value</span>) {
+        <span class="kw">let</span> <span class="ident">global</span> <span class="op">=</span> <span class="ident">interpreter</span>.<span class="ident">global_object</span>();
         <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">BoaProfiler</span>::<span class="ident">global</span>().<span class="ident">start_event</span>(<span class="self">Self</span>::<span class="ident">NAME</span>, <span class="string">&quot;init&quot;</span>);
 
         <span class="kw">let</span> <span class="ident">console</span> <span class="op">=</span> <span class="ident">Value</span>::<span class="ident">new_object</span>(<span class="prelude-val">Some</span>(<span class="ident">global</span>));
 
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">assert</span>, <span class="string">&quot;assert&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">clear</span>, <span class="string">&quot;clear&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">debug</span>, <span class="string">&quot;debug&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">error</span>, <span class="string">&quot;error&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">info</span>, <span class="string">&quot;info&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">log</span>, <span class="string">&quot;log&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">trace</span>, <span class="string">&quot;trace&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">warn</span>, <span class="string">&quot;warn&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">error</span>, <span class="string">&quot;exception&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">count</span>, <span class="string">&quot;count&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">count_reset</span>, <span class="string">&quot;countReset&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">group</span>, <span class="string">&quot;group&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">group</span>, <span class="string">&quot;groupCollapsed&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">group_end</span>, <span class="string">&quot;groupEnd&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">time</span>, <span class="string">&quot;time&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">time_log</span>, <span class="string">&quot;timeLog&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">time_end</span>, <span class="string">&quot;timeEnd&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">dir</span>, <span class="string">&quot;dir&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
-        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">dir</span>, <span class="string">&quot;dirxml&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">assert</span>, <span class="string">&quot;assert&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">clear</span>, <span class="string">&quot;clear&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">debug</span>, <span class="string">&quot;debug&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">error</span>, <span class="string">&quot;error&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">info</span>, <span class="string">&quot;info&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">log</span>, <span class="string">&quot;log&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">trace</span>, <span class="string">&quot;trace&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">warn</span>, <span class="string">&quot;warn&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">error</span>, <span class="string">&quot;exception&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">count</span>, <span class="string">&quot;count&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">count_reset</span>, <span class="string">&quot;countReset&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">group</span>, <span class="string">&quot;group&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">group</span>, <span class="string">&quot;groupCollapsed&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">group_end</span>, <span class="string">&quot;groupEnd&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">time</span>, <span class="string">&quot;time&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">time_log</span>, <span class="string">&quot;timeLog&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">time_end</span>, <span class="string">&quot;timeEnd&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">dir</span>, <span class="string">&quot;dir&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
+        <span class="ident">make_builtin_fn</span>(<span class="self">Self</span>::<span class="ident">dir</span>, <span class="string">&quot;dirxml&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">console</span>, <span class="number">0</span>, <span class="ident">interpreter</span>);
 
         (<span class="self">Self</span>::<span class="ident">NAME</span>, <span class="ident">console</span>)
     }
