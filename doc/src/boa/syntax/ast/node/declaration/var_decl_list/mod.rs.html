@@ -143,6 +143,9 @@
 <span id="142">142</span>
 <span id="143">143</span>
 <span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">environment</span>::<span class="ident">lexical_environment</span>::<span class="ident">VariableScope</span>,
@@ -153,7 +156,7 @@
 };
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 
 <span class="doccomment">/// The `var` statement declares a variable, optionally initializing it to a value.</span>
@@ -174,10 +177,10 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// [spec]: https://tc39.es/ecma262/#prod-VariableStatement</span>
 <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/var</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Trace</span>, <span class="ident">Finalize</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">VarDeclList</span> {
-    <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">serde</span>(<span class="ident">flatten</span>))]</span>
+    <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">serde</span>(<span class="ident">flatten</span>))]</span>
     <span class="ident">vars</span>: <span class="ident">Box</span><span class="op">&lt;</span>[<span class="ident">VarDecl</span>]<span class="op">&gt;</span>,
 }
 
@@ -192,15 +195,18 @@
 
             <span class="kw">if</span> <span class="ident">environment</span>.<span class="ident">has_binding</span>(<span class="ident">var</span>.<span class="ident">name</span>()) {
                 <span class="kw">if</span> <span class="ident">var</span>.<span class="ident">init</span>().<span class="ident">is_some</span>() {
-                    <span class="ident">environment</span>.<span class="ident">set_mutable_binding</span>(<span class="ident">var</span>.<span class="ident">name</span>(), <span class="ident">val</span>, <span class="bool-val">true</span>);
+                    <span class="ident">environment</span>
+                        .<span class="ident">set_mutable_binding</span>(<span class="ident">var</span>.<span class="ident">name</span>(), <span class="ident">val</span>, <span class="bool-val">true</span>)
+                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">to_error</span>(<span class="ident">context</span>))<span class="question-mark">?</span>;
                 }
             } <span class="kw">else</span> {
-                <span class="ident">environment</span>.<span class="ident">create_mutable_binding</span>(
-                    <span class="ident">var</span>.<span class="ident">name</span>().<span class="ident">to_owned</span>(),
-                    <span class="bool-val">false</span>,
-                    <span class="ident">VariableScope</span>::<span class="ident">Function</span>,
-                );
-                <span class="ident">environment</span>.<span class="ident">initialize_binding</span>(<span class="ident">var</span>.<span class="ident">name</span>(), <span class="ident">val</span>);
+                <span class="ident">environment</span>
+                    .<span class="ident">create_mutable_binding</span>(<span class="ident">var</span>.<span class="ident">name</span>().<span class="ident">to_owned</span>(), <span class="bool-val">false</span>, <span class="ident">VariableScope</span>::<span class="ident">Function</span>)
+                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">to_error</span>(<span class="ident">context</span>))<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">environment</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">context</span>.<span class="ident">realm_mut</span>().<span class="ident">environment</span>;
+                <span class="ident">environment</span>
+                    .<span class="ident">initialize_binding</span>(<span class="ident">var</span>.<span class="ident">name</span>(), <span class="ident">val</span>)
+                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">to_error</span>(<span class="ident">context</span>))<span class="question-mark">?</span>;
             }
         }
         <span class="prelude-val">Ok</span>(<span class="ident">Value</span>::<span class="ident">undefined</span>())
@@ -248,7 +254,7 @@
 }
 
 <span class="doccomment">/// Individual variable declaration.</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Trace</span>, <span class="ident">Finalize</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">VarDecl</span> {
     <span class="ident">name</span>: <span class="ident">Identifier</span>,

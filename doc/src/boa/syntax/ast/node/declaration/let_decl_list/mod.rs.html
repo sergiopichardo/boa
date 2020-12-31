@@ -137,6 +137,7 @@
 <span id="136">136</span>
 <span id="137">137</span>
 <span id="138">138</span>
+<span id="139">139</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">environment</span>::<span class="ident">lexical_environment</span>::<span class="ident">VariableScope</span>,
@@ -147,7 +148,7 @@
 };
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 
 <span class="doccomment">/// The `let` statement declares a block scope local variable, optionally initializing it to a</span>
@@ -167,10 +168,10 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// [spec]: https://tc39.es/ecma262/#sec-let-and-const-declarations</span>
 <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Trace</span>, <span class="ident">Finalize</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LetDeclList</span> {
-    <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">serde</span>(<span class="ident">flatten</span>))]</span>
+    <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">serde</span>(<span class="ident">flatten</span>))]</span>
     <span class="ident">list</span>: <span class="ident">Box</span><span class="op">&lt;</span>[<span class="ident">LetDecl</span>]<span class="op">&gt;</span>,
 }
 
@@ -181,15 +182,16 @@
                 <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">v</span>.<span class="ident">run</span>(<span class="ident">context</span>)<span class="question-mark">?</span>,
                 <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Value</span>::<span class="ident">undefined</span>(),
             };
-            <span class="ident">context</span>.<span class="ident">realm_mut</span>().<span class="ident">environment</span>.<span class="ident">create_mutable_binding</span>(
-                <span class="ident">var</span>.<span class="ident">name</span>().<span class="ident">to_owned</span>(),
-                <span class="bool-val">false</span>,
-                <span class="ident">VariableScope</span>::<span class="ident">Block</span>,
-            );
             <span class="ident">context</span>
                 .<span class="ident">realm_mut</span>()
                 .<span class="ident">environment</span>
-                .<span class="ident">initialize_binding</span>(<span class="ident">var</span>.<span class="ident">name</span>(), <span class="ident">val</span>);
+                .<span class="ident">create_mutable_binding</span>(<span class="ident">var</span>.<span class="ident">name</span>().<span class="ident">to_owned</span>(), <span class="bool-val">false</span>, <span class="ident">VariableScope</span>::<span class="ident">Block</span>)
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">to_error</span>(<span class="ident">context</span>))<span class="question-mark">?</span>;
+            <span class="ident">context</span>
+                .<span class="ident">realm_mut</span>()
+                .<span class="ident">environment</span>
+                .<span class="ident">initialize_binding</span>(<span class="ident">var</span>.<span class="ident">name</span>(), <span class="ident">val</span>)
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">to_error</span>(<span class="ident">context</span>))<span class="question-mark">?</span>;
         }
         <span class="prelude-val">Ok</span>(<span class="ident">Value</span>::<span class="ident">undefined</span>())
     }
@@ -236,7 +238,7 @@
 }
 
 <span class="doccomment">/// Individual constant declaration.</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Trace</span>, <span class="ident">Finalize</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LetDecl</span> {
     <span class="ident">name</span>: <span class="ident">Identifier</span>,

@@ -151,7 +151,7 @@
 };
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 
 <span class="doccomment">/// The `const` statements are block-scoped, much like variables defined using the `let`</span>
@@ -172,10 +172,10 @@
 <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/const</span>
 <span class="doccomment">/// [identifier]: https://developer.mozilla.org/en-US/docs/Glossary/identifier</span>
 <span class="doccomment">/// [expression]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Expressions</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Trace</span>, <span class="ident">Finalize</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ConstDeclList</span> {
-    <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">serde</span>(<span class="ident">flatten</span>))]</span>
+    <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">serde</span>(<span class="ident">flatten</span>))]</span>
     <span class="ident">list</span>: <span class="ident">Box</span><span class="op">&lt;</span>[<span class="ident">ConstDecl</span>]<span class="op">&gt;</span>,
 }
 
@@ -187,17 +187,17 @@
             } <span class="kw">else</span> {
                 <span class="kw">return</span> <span class="ident">context</span>.<span class="ident">throw_syntax_error</span>(<span class="string">&quot;missing = in const declaration&quot;</span>);
             };
-
-            <span class="ident">context</span>.<span class="ident">realm_mut</span>().<span class="ident">environment</span>.<span class="ident">create_immutable_binding</span>(
-                <span class="ident">decl</span>.<span class="ident">name</span>().<span class="ident">to_owned</span>(),
-                <span class="bool-val">false</span>,
-                <span class="ident">VariableScope</span>::<span class="ident">Block</span>,
-            );
+            <span class="ident">context</span>
+                .<span class="ident">realm_mut</span>()
+                .<span class="ident">environment</span>
+                .<span class="ident">create_immutable_binding</span>(<span class="ident">decl</span>.<span class="ident">name</span>().<span class="ident">to_owned</span>(), <span class="bool-val">false</span>, <span class="ident">VariableScope</span>::<span class="ident">Block</span>)
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">to_error</span>(<span class="ident">context</span>))<span class="question-mark">?</span>;
 
             <span class="ident">context</span>
                 .<span class="ident">realm_mut</span>()
                 .<span class="ident">environment</span>
-                .<span class="ident">initialize_binding</span>(<span class="ident">decl</span>.<span class="ident">name</span>(), <span class="ident">val</span>);
+                .<span class="ident">initialize_binding</span>(<span class="ident">decl</span>.<span class="ident">name</span>(), <span class="ident">val</span>)
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">to_error</span>(<span class="ident">context</span>))<span class="question-mark">?</span>;
         }
         <span class="prelude-val">Ok</span>(<span class="ident">Value</span>::<span class="ident">undefined</span>())
     }
@@ -244,7 +244,7 @@
 }
 
 <span class="doccomment">/// Individual constant declaration.</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Trace</span>, <span class="ident">Finalize</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ConstDecl</span> {
     <span class="ident">name</span>: <span class="ident">Identifier</span>,

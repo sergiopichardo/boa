@@ -558,6 +558,10 @@
 <span id="557">557</span>
 <span id="558">558</span>
 <span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! This module implements the `Node` structure, which composes the AST.</span>
 
@@ -616,10 +620,10 @@
     <span class="ident">fmt</span>::{<span class="self">self</span>, <span class="ident">Display</span>},
 };
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Trace</span>, <span class="ident">Finalize</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Node</span> {
     <span class="doccomment">/// Array declaration node. [More information](./array/struct.ArrayDecl.html).</span>
@@ -873,7 +877,11 @@
             <span class="ident">Node</span>::<span class="ident">Spread</span>(<span class="kw-2">ref</span> <span class="ident">spread</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">spread</span>.<span class="ident">run</span>(<span class="ident">context</span>),
             <span class="ident">Node</span>::<span class="ident">This</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="comment">// Will either return `this` binding or undefined</span>
-                <span class="prelude-val">Ok</span>(<span class="ident">context</span>.<span class="ident">realm</span>().<span class="ident">environment</span>.<span class="ident">get_this_binding</span>())
+                <span class="ident">context</span>
+                    .<span class="ident">realm</span>()
+                    .<span class="ident">environment</span>
+                    .<span class="ident">get_this_binding</span>()
+                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">to_error</span>(<span class="ident">context</span>))
             }
             <span class="ident">Node</span>::<span class="ident">Try</span>(<span class="kw-2">ref</span> <span class="ident">try_node</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">try_node</span>.<span class="ident">run</span>(<span class="ident">context</span>),
             <span class="ident">Node</span>::<span class="ident">Break</span>(<span class="kw-2">ref</span> <span class="ident">break_node</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">break_node</span>.<span class="ident">run</span>(<span class="ident">context</span>),
@@ -913,7 +921,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// [spec]: https://tc39.es/ecma262/#prod-FormalParameter</span>
 <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Missing_formal_parameter</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Trace</span>, <span class="ident">Finalize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FormalParameter</span> {
     <span class="ident">name</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">str</span><span class="op">&gt;</span>,
@@ -976,7 +984,7 @@
 <span class="doccomment">/// [spec]: https://tc39.es/ecma262/#prod-PropertyDefinition</span>
 <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Glossary/property/JavaScript</span>
 <span class="comment">// TODO: Support all features: https://tc39.es/ecma262/#prod-PropertyDefinition</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Trace</span>, <span class="ident">Finalize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PropertyDefinition</span> {
     <span class="doccomment">/// Puts a variable into an object.</span>
@@ -1069,7 +1077,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// [spec]: https://tc39.es/ecma262/#prod-MethodDefinition</span>
 <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Method_definitions</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Copy</span>, <span class="ident">Finalize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">MethodDefinitionKind</span> {
     <span class="doccomment">/// The `get` syntax binds an object property to a function that will be called when that property is looked up.</span>

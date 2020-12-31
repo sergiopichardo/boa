@@ -208,6 +208,13 @@
 <span id="207">207</span>
 <span id="208">208</span>
 <span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">exec</span>::<span class="ident">Executable</span>,
@@ -220,7 +227,7 @@
 };
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 
 <span class="doccomment">/// Binary operators requires two operands, one before the operator and one after the operator.</span>
@@ -229,7 +236,7 @@
 <span class="doccomment">///  - [MDN documentation][mdn]</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Operators</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;serde&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;deser&quot;</span>, <span class="ident">derive</span>(<span class="ident">Serialize</span>, <span class="ident">Deserialize</span>))]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Trace</span>, <span class="ident">Finalize</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BinOp</span> {
     <span class="ident">op</span>: <span class="ident">op</span>::<span class="ident">BinOp</span>,
@@ -361,32 +368,39 @@
                     }
                 }))
             }
-            <span class="ident">op</span>::<span class="ident">BinOp</span>::<span class="ident">Log</span>(<span class="ident">op</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="comment">// turn a `Value` into a `bool`</span>
-                <span class="kw">let</span> <span class="ident">to_bool</span> <span class="op">=</span> <span class="op">|</span><span class="ident">value</span><span class="op">|</span> <span class="ident">bool</span>::<span class="ident">from</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>);
-                <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">op</span> {
-                    <span class="ident">LogOp</span>::<span class="ident">And</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Value</span>::<span class="ident">from</span>(
-                        <span class="ident">to_bool</span>(<span class="self">self</span>.<span class="ident">lhs</span>().<span class="ident">run</span>(<span class="ident">context</span>)<span class="question-mark">?</span>) <span class="op">&amp;&amp;</span> <span class="ident">to_bool</span>(<span class="self">self</span>.<span class="ident">rhs</span>().<span class="ident">run</span>(<span class="ident">context</span>)<span class="question-mark">?</span>),
-                    ),
-                    <span class="ident">LogOp</span>::<span class="ident">Or</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Value</span>::<span class="ident">from</span>(
-                        <span class="ident">to_bool</span>(<span class="self">self</span>.<span class="ident">lhs</span>().<span class="ident">run</span>(<span class="ident">context</span>)<span class="question-mark">?</span>) <span class="op">|</span><span class="op">|</span> <span class="ident">to_bool</span>(<span class="self">self</span>.<span class="ident">rhs</span>().<span class="ident">run</span>(<span class="ident">context</span>)<span class="question-mark">?</span>),
-                    ),
-                })
-            }
+            <span class="ident">op</span>::<span class="ident">BinOp</span>::<span class="ident">Log</span>(<span class="ident">op</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">op</span> {
+                <span class="ident">LogOp</span>::<span class="ident">And</span> <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">let</span> <span class="ident">left</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">lhs</span>().<span class="ident">run</span>(<span class="ident">context</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if</span> <span class="op">!</span><span class="ident">left</span>.<span class="ident">to_boolean</span>() {
+                        <span class="ident">left</span>
+                    } <span class="kw">else</span> {
+                        <span class="self">self</span>.<span class="ident">rhs</span>().<span class="ident">run</span>(<span class="ident">context</span>)<span class="question-mark">?</span>
+                    }
+                }
+                <span class="ident">LogOp</span>::<span class="ident">Or</span> <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">let</span> <span class="ident">left</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">lhs</span>().<span class="ident">run</span>(<span class="ident">context</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if</span> <span class="ident">left</span>.<span class="ident">to_boolean</span>() {
+                        <span class="ident">left</span>
+                    } <span class="kw">else</span> {
+                        <span class="self">self</span>.<span class="ident">rhs</span>().<span class="ident">run</span>(<span class="ident">context</span>)<span class="question-mark">?</span>
+                    }
+                }
+            }),
             <span class="ident">op</span>::<span class="ident">BinOp</span>::<span class="ident">Assign</span>(<span class="ident">op</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">lhs</span>() {
                 <span class="ident">Node</span>::<span class="ident">Identifier</span>(<span class="kw-2">ref</span> <span class="ident">name</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">v_a</span> <span class="op">=</span> <span class="ident">context</span>
                         .<span class="ident">realm</span>()
                         .<span class="ident">environment</span>
                         .<span class="ident">get_binding_value</span>(<span class="ident">name</span>.<span class="ident">as_ref</span>())
-                        .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">context</span>.<span class="ident">construct_reference_error</span>(<span class="ident">name</span>.<span class="ident">as_ref</span>()))<span class="question-mark">?</span>;
+                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">to_error</span>(<span class="ident">context</span>))<span class="question-mark">?</span>;
+
                     <span class="kw">let</span> <span class="ident">v_b</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">rhs</span>().<span class="ident">run</span>(<span class="ident">context</span>)<span class="question-mark">?</span>;
                     <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">run_assign</span>(<span class="ident">op</span>, <span class="ident">v_a</span>, <span class="ident">v_b</span>, <span class="ident">context</span>)<span class="question-mark">?</span>;
-                    <span class="ident">context</span>.<span class="ident">realm_mut</span>().<span class="ident">environment</span>.<span class="ident">set_mutable_binding</span>(
-                        <span class="ident">name</span>.<span class="ident">as_ref</span>(),
-                        <span class="ident">value</span>.<span class="ident">clone</span>(),
-                        <span class="bool-val">true</span>,
-                    );
+                    <span class="ident">context</span>
+                        .<span class="ident">realm_mut</span>()
+                        .<span class="ident">environment</span>
+                        .<span class="ident">set_mutable_binding</span>(<span class="ident">name</span>.<span class="ident">as_ref</span>(), <span class="ident">value</span>.<span class="ident">clone</span>(), <span class="bool-val">true</span>)
+                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">to_error</span>(<span class="ident">context</span>))<span class="question-mark">?</span>;
                     <span class="prelude-val">Ok</span>(<span class="ident">value</span>)
                 }
                 <span class="ident">Node</span>::<span class="ident">GetConstField</span>(<span class="kw-2">ref</span> <span class="ident">get_const_field</span>) <span class="op">=</span><span class="op">&gt;</span> {
