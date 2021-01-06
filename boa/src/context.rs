@@ -763,7 +763,6 @@ impl Context {
 
         let mut compiler = Compiler::default();
         statement_list.compile(&mut compiler, self);
-        dbg!(&compiler);
 
         let mut vm = VM::new(compiler, self);
         // Generate Bytecode and place it into instruction_stack
