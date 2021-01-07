@@ -128,7 +128,7 @@ impl Test {
 
                     match self.set_up_env(&harness, strict) {
                         Ok(mut context) => {
-                            let res = context.eval(&self.content.as_ref());
+                            let res = context.eval(&self.content.as_ref(), false);
 
                             let passed = res.is_ok();
                             let text = match res {
@@ -173,7 +173,7 @@ impl Test {
                         (false, format!("Uncaught {}", e))
                     } else {
                         match self.set_up_env(&harness, strict) {
-                            Ok(mut context) => match context.eval(&self.content.as_ref()) {
+                            Ok(mut context) => match context.eval(&self.content.as_ref(), false) {
                                 Ok(res) => (false, format!("{}", res.display())),
                                 Err(e) => {
                                     let passed =
@@ -266,15 +266,15 @@ impl Test {
 
         if strict {
             context
-                .eval(r#""use strict";"#)
+                .eval(r#""use strict";"#, false)
                 .map_err(|e| format!("could not set strict mode:\n{}", e.display()))?;
         }
 
         context
-            .eval(&harness.assert.as_ref())
+            .eval(&harness.assert.as_ref(), false)
             .map_err(|e| format!("could not run assert.js:\n{}", e.display()))?;
         context
-            .eval(&harness.sta.as_ref())
+            .eval(&harness.sta.as_ref(), false)
             .map_err(|e| format!("could not run sta.js:\n{}", e.display()))?;
 
         for include in self.includes.iter() {
@@ -285,6 +285,7 @@ impl Test {
                         .get(include)
                         .ok_or_else(|| format!("could not find the {} include file.", include))?
                         .as_ref(),
+                    false,
                 )
                 .map_err(|e| {
                     format!(

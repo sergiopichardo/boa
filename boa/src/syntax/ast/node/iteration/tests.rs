@@ -201,7 +201,7 @@ fn for_of_loop_declaration() {
             result = i;
         }
     "#;
-    context.eval(scenario).unwrap();
+    context.eval(scenario, false).unwrap();
     assert_eq!(&forward(&mut context, "result"), "3");
     assert_eq!(&forward(&mut context, "i"), "3");
 }
@@ -215,7 +215,7 @@ fn for_of_loop_var() {
             result = i;
         }
     "#;
-    context.eval(scenario).unwrap();
+    context.eval(scenario, false).unwrap();
     assert_eq!(&forward(&mut context, "result"), "3");
     assert_eq!(&forward(&mut context, "i"), "3");
 }
@@ -229,7 +229,7 @@ fn for_of_loop_let() {
             result = i;
         }
     "#;
-    context.eval(scenario).unwrap();
+    context.eval(scenario, false).unwrap();
     assert_eq!(&forward(&mut context, "result"), "3");
     assert_eq!(
         &forward(
@@ -255,7 +255,7 @@ fn for_of_loop_const() {
             result = i;
         }
     "#;
-    context.eval(scenario).unwrap();
+    context.eval(scenario, false).unwrap();
     assert_eq!(&forward(&mut context, "result"), "3");
     assert_eq!(
         &forward(
@@ -283,7 +283,7 @@ fn for_of_loop_break() {
             result = i
         }
     "#;
-    context.eval(scenario).unwrap();
+    context.eval(scenario, false).unwrap();
     assert_eq!(&forward(&mut context, "result"), "1");
     assert_eq!(&forward(&mut context, "i"), "2");
 }
@@ -299,7 +299,7 @@ fn for_of_loop_continue() {
             result = i
         }
     "#;
-    context.eval(scenario).unwrap();
+    context.eval(scenario, false).unwrap();
     assert_eq!(&forward(&mut context, "result"), "2");
     assert_eq!(&forward(&mut context, "i"), "3");
 }
@@ -315,7 +315,7 @@ fn for_of_loop_return() {
             }
         }
     "#;
-    context.eval(scenario).unwrap();
+    context.eval(scenario, false).unwrap();
     assert_eq!(&forward(&mut context, "foo()"), "2");
 }
 

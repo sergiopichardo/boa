@@ -23,16 +23,12 @@ pub struct VM<'a> {
 pub struct Profiler {
     instant: Instant,
     prev_time: Duration,
-    // current_inst: u8,
-    inst_profile: [(usize, Duration); 100],
-    // gc_profile: [(usize, Duration); 3],
-    // gc_stop_time: Duration,
     trace_string: String,
     start_flag: bool,
 }
 
 impl<'a> VM<'a> {
-    pub fn new(compiler: Compiler, ctx: &'a mut Context) -> Self {
+    pub fn new(compiler: Compiler, ctx: &'a mut Context, trace: bool) -> Self {
         Self {
             ctx,
             idx: 0,
@@ -40,12 +36,11 @@ impl<'a> VM<'a> {
             pool: compiler.pool,
             stack: vec![],
             stack_pointer: 0,
-            is_trace: true,
+            is_trace: trace,
             profile: Profiler {
                 instant: Instant::now(),
                 prev_time: Duration::from_secs(0),
-                trace_string: "".to_string(),
-                inst_profile: [(0, Duration::from_micros(0)); 100],
+                trace_string: String::new(), // Won't allocate if we don't use trace
                 start_flag: false,
             },
         }
@@ -401,10 +396,24 @@ impl<'a> VM<'a> {
                 ),
                 match self.stack.last() {
                     None => "<empty>".to_string(),
-                    // @todo implement Display for val
                     Some(val) => format!("{}\t{:p}", val.display(), val),
                 }
             );
+        }
+
+        if end {
+            println!();
+            println!("Pool");
+            for (i, val) in self.pool.iter().enumerate() {
+                println!("{:<10} {:<10} {:p}", i, val.display(), val);
+            }
+
+            println!();
+            println!("Stack");
+            for (i, val) in self.stack.iter().enumerate() {
+                println!("{:<10} {:<10} {:p}", i, val.display(), val);
+            }
+            println!();
         }
 
         self.profile.prev_time = self.profile.instant.elapsed();

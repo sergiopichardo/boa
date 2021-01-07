@@ -141,7 +141,7 @@ pub(crate) fn forward_val<T: AsRef<[u8]>>(context: &mut Context, src: T) -> Resu
 pub(crate) fn exec<T: AsRef<[u8]>>(src: T) -> String {
     let src_bytes: &[u8] = src.as_ref();
 
-    match Context::new().eval(src_bytes) {
+    match Context::new().eval(src_bytes, false) {
         Ok(value) => value.display().to_string(),
         Err(error) => error.display().to_string(),
     }

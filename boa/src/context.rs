@@ -706,7 +706,7 @@ impl Context {
     ///# use boa::Context;
     /// let mut context = Context::new();
     ///
-    /// let value = context.eval("1 + 3").unwrap();
+    /// let value = context.eval("1 + 3", false).unwrap();
     ///
     /// assert!(value.is_number());
     /// assert_eq!(value.as_number().unwrap(), 4.0);
@@ -714,7 +714,7 @@ impl Context {
     #[cfg(not(feature = "vm"))]
     #[allow(clippy::unit_arg, clippy::drop_copy)]
     #[inline]
-    pub fn eval<T: AsRef<[u8]>>(&mut self, src: T) -> Result<Value> {
+    pub fn eval<T: AsRef<[u8]>>(&mut self, src: T, _trace: bool) -> Result<Value> {
         let main_timer = BoaProfiler::global().start_event("Main", "Main");
         let src_bytes: &[u8] = src.as_ref();
 
@@ -748,7 +748,7 @@ impl Context {
     /// ```
     #[cfg(feature = "vm")]
     #[allow(clippy::unit_arg, clippy::drop_copy)]
-    pub fn eval<T: AsRef<[u8]>>(&mut self, src: T) -> Result<Value> {
+    pub fn eval<T: AsRef<[u8]>>(&mut self, src: T, trace: bool) -> Result<Value> {
         let main_timer = BoaProfiler::global().start_event("Main", "Main");
         let src_bytes: &[u8] = src.as_ref();
 
@@ -764,7 +764,7 @@ impl Context {
         let mut compiler = Compiler::default();
         statement_list.compile(&mut compiler, self);
 
-        let mut vm = VM::new(compiler, self);
+        let mut vm = VM::new(compiler, self, trace);
         // Generate Bytecode and place it into instruction_stack
         // Interpret the Bytecode
         let result = vm.run();

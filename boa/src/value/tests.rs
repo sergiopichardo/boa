@@ -151,7 +151,6 @@ fn hash_rational() {
     assert_eq!(hash_value(&value1), hash_value(&value2));
 
     let nan = Value::nan();
-    assert_eq!(nan, nan);
     assert_eq!(hash_value(&nan), hash_value(&nan));
     assert_ne!(hash_value(&nan), hash_value(&Value::rational(1.0)));
 }
@@ -159,7 +158,6 @@ fn hash_rational() {
 #[test]
 fn hash_object() {
     let object1 = Value::object(Object::default());
-    assert_eq!(object1, object1);
     assert_eq!(object1, object1.clone());
 
     let object2 = Value::object(Object::default());
@@ -614,7 +612,7 @@ fn test_accessors() {
             let a = { get b() { return "c" }, set b(value) { arr = arr.concat([value]) }} ;
             a.b = "a";
         "#;
-    context.eval(src).unwrap();
+    context.eval(src, false).unwrap();
     assert_eq!(forward(&mut context, "a.b"), r#""c""#);
     assert_eq!(forward(&mut context, "arr"), r#"[ "a" ]"#);
 }
@@ -629,7 +627,7 @@ fn to_primitive() {
     };
     let primitive = a + 0;
     "#;
-    context.eval(src).unwrap();
+    context.eval(src, false).unwrap();
     assert_eq!(forward(&mut context, "primitive"), "42");
 }
 

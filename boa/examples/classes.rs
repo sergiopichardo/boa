@@ -141,6 +141,7 @@ fn main() {
         console.log(person.inheritedProperty);
 	    console.log(Person.prototype.inheritedProperty === person.inheritedProperty);
     ",
+            false,
         )
         .unwrap();
 }

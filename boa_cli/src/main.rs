@@ -69,6 +69,10 @@ struct Opt {
     /// Use vi mode in the REPL
     #[structopt(long = "vi")]
     vi_mode: bool,
+
+    /// Use trace to see instructions
+    #[structopt(long = "trace", short = "t")]
+    trace: bool,
 }
 
 impl Opt {
@@ -151,7 +155,7 @@ pub fn main() -> Result<(), std::io::Error> {
                 eprintln!("{}", e);
             }
         } else {
-            match context.eval(&buffer) {
+            match context.eval(&buffer, args.trace) {
                 Ok(v) => println!("{}", v.display()),
                 Err(v) => eprintln!("Uncaught {}", v.display()),
             }
@@ -187,7 +191,7 @@ pub fn main() -> Result<(), std::io::Error> {
                             eprintln!("{}", e);
                         }
                     } else {
-                        match context.eval(line.trim_end()) {
+                        match context.eval(line.trim_end(), args.trace) {
                             Ok(v) => println!("{}", v.display()),
                             Err(v) => {
                                 eprintln!("{}: {}", "Uncaught".red(), v.display().to_string().red())

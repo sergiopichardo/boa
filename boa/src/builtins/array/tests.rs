@@ -10,60 +10,63 @@ fn is_array() {
         var new_arr = new Array();
         var many = ["a", "b", "c"];
         "#;
-    context.eval(init).unwrap();
+    context.eval(init, false).unwrap();
     assert_eq!(
-        context.eval("Array.isArray(empty)").unwrap(),
+        context.eval("Array.isArray(empty)", false).unwrap(),
         Value::Boolean(true)
     );
     assert_eq!(
-        context.eval("Array.isArray(new_arr)").unwrap(),
+        context.eval("Array.isArray(new_arr)", false).unwrap(),
         Value::Boolean(true)
     );
     assert_eq!(
-        context.eval("Array.isArray(many)").unwrap(),
+        context.eval("Array.isArray(many)", false).unwrap(),
         Value::Boolean(true)
     );
     assert_eq!(
-        context.eval("Array.isArray([1, 2, 3])").unwrap(),
+        context.eval("Array.isArray([1, 2, 3])", false).unwrap(),
         Value::Boolean(true)
     );
     assert_eq!(
-        context.eval("Array.isArray([])").unwrap(),
+        context.eval("Array.isArray([])", false).unwrap(),
         Value::Boolean(true)
     );
     assert_eq!(
-        context.eval("Array.isArray({})").unwrap(),
+        context.eval("Array.isArray({})", false).unwrap(),
         Value::Boolean(false)
     );
     // assert_eq!(context.eval("Array.isArray(new Array)"), "true");
     assert_eq!(
-        context.eval("Array.isArray()").unwrap(),
+        context.eval("Array.isArray()", false).unwrap(),
         Value::Boolean(false)
     );
     assert_eq!(
         context
-            .eval("Array.isArray({ constructor: Array })")
+            .eval("Array.isArray({ constructor: Array })", false)
             .unwrap(),
         Value::Boolean(false)
     );
     assert_eq!(
         context
-            .eval("Array.isArray({ push: Array.prototype.push, concat: Array.prototype.concat })")
+            .eval(
+                "Array.isArray({ push: Array.prototype.push, concat: Array.prototype.concat })",
+                false
+            )
             .unwrap(),
         Value::Boolean(false)
     );
     assert_eq!(
-        context.eval("Array.isArray(17)").unwrap(),
+        context.eval("Array.isArray(17)", false).unwrap(),
         Value::Boolean(false)
     );
     assert_eq!(
         context
-            .eval("Array.isArray({ __proto__: Array.prototype })")
+            .eval("Array.isArray({ __proto__: Array.prototype })", false)
             .unwrap(),
         Value::Boolean(false)
     );
     assert_eq!(
-        context.eval("Array.isArray({ length: 0 })").unwrap(),
+        context.eval("Array.isArray({ length: 0 })", false).unwrap(),
         Value::Boolean(false)
     );
 }
@@ -77,31 +80,31 @@ fn concat() {
     var empty = new Array();
     var one = new Array(1);
     "#;
-    context.eval(init).unwrap();
+    context.eval(init, false).unwrap();
     // Empty ++ Empty
     let ee = context
-        .eval("empty.concat(empty)")
+        .eval("empty.concat(empty)", false)
         .unwrap()
         .to_string(&mut context)
         .unwrap();
     assert_eq!(ee, "[]");
     // Empty ++ NonEmpty
     let en = context
-        .eval("empty.concat(one)")
+        .eval("empty.concat(one)", false)
         .unwrap()
         .to_string(&mut context)
         .unwrap();
     assert_eq!(en, "[a]");
     // NonEmpty ++ Empty
     let ne = context
-        .eval("one.concat(empty)")
+        .eval("one.concat(empty)", false)
         .unwrap()
         .to_string(&mut context)
         .unwrap();
     assert_eq!(ne, "a.b.c");
     // NonEmpty ++ NonEmpty
     let nn = context
-        .eval("one.concat(one)")
+        .eval("one.concat(one)", false)
         .unwrap()
         .to_string(&mut context)
         .unwrap();
@@ -1364,9 +1367,9 @@ fn get_relative_end() {
 
 #[test]
 fn array_length_is_not_enumerable() {
-    let mut context = Context::new();
+    let context = Context::new();
 
-    let array = Array::new_array(&mut context).unwrap();
+    let array = Array::new_array(&context).unwrap();
     let desc = array.get_property("length").unwrap();
     assert!(!desc.enumerable());
 }
